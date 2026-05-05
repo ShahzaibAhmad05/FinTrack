@@ -41,6 +41,13 @@ export default function Home() {
     setNote("");
   };
 
+  const removeExpense = (expenseId: number) => {
+    if (!expenseId) 
+      return;
+
+    setExpenses(expenses.filter(exp => exp.id !== expenseId));
+  }
+
 
   return (
     <main className="min-h-screen my-12">
@@ -106,6 +113,12 @@ export default function Home() {
               <span>title: {expense.title}</span>
               <span>note: {expense.note}</span>
               <span>amount: {expense.amount}</span>
+              <button
+                onClick={() => removeExpense(expense.id)}
+                className="border border-black rounded-md max-w-48 mt-4 bg-gray-50 hover:bg-gray-200"
+              >
+                Remove this one
+              </button>
             </div>
           ))}
         </div>
