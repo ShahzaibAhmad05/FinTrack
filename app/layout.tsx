@@ -7,8 +7,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="">
-      <body className="min-h-full">{children}</body>
+    <html lang="en">
+      <body className="min-h-screen">
+        {children}
+      </body>
     </html>
   );
 }
