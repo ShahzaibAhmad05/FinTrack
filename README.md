@@ -9,8 +9,15 @@ This is the usual Nextjs TailwindCSS combo, AND the setup is simple enough to ru
 
 - Nextjs (with typescript ofcourse, we hate js)
 - TailwindCSS
-- Postgres (through supabase)
-- Nextjs serverless functions (headless backend)
+- Browser local storage
+- Algorithms for recommendations
+
+
+### A few thoughts on this
+
+The typescript, Nextjs, Tailwind selection is obvious. As for the local storage, we didn't want to bother setting up a database for a deadend lab. 
+
+The states for the variables are tracked using hooks, which update the states in the localStorage as well. Utilities for handling localStorage are in `lib/storage/`.
 
 
 ## Development Setup
