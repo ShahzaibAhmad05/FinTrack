@@ -6,47 +6,30 @@ import { useState } from "react";
 // object types
 import type { Expense } from "@/types";
 
+// custom modules
+import { 
+  useExpenses
+} from "@/hooks/expenses";
+
 
 export default function Home() {
-  // main expenses list
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  // usage hooks
+  const { handleAddExpense, handleRemoveExpense, expenses } = useExpenses();
 
-  // elements to be used within this
-  const [id, setId] = useState<number>(1);
+
+  // form vars
   const [title, setTitle] = useState<string>("");
   const [note, setNote] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
 
 
-  // functions to be used here
-  const handleAddExpense = () => {
-    if (!title || !amount) 
-      return;
-
-
-    const newExpense = {
-      id: id,
-      amount: Number(amount),
-      title: title,
-      note: note
-    } as Expense;
-
-    setExpenses([...expenses, newExpense]);
-
-
-    // reset the stuff and increment id
-    setId(id+1);
+  // utils
+  const onSubmit = () => {
+    handleAddExpense(title, note, Number(amount));
     setAmount("");
     setTitle("");
     setNote("");
   };
-
-  const removeExpense = (expenseId: number) => {
-    if (!expenseId) 
-      return;
-
-    setExpenses(expenses.filter(exp => exp.id !== expenseId));
-  }
 
 
   return (
@@ -95,7 +78,7 @@ export default function Home() {
           className="border border-blue p-2"
         />
         <button 
-          onClick={handleAddExpense}
+          onClick={onSubmit}
           className="border rounded-md border-black max-w-48 mt-4 py-2 bg-gray-50 hover:bg-gray-200 transition-colors"
         >
           Add this EXP!!
@@ -114,7 +97,7 @@ export default function Home() {
               <span>note: {expense.note}</span>
               <span>amount: {expense.amount}</span>
               <button
-                onClick={() => removeExpense(expense.id)}
+                onClick={() => handleRemoveExpense(expense)}
                 className="border border-black rounded-md max-w-48 mt-4 bg-gray-50 hover:bg-gray-200"
               >
                 Remove this one
