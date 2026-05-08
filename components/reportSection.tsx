@@ -5,12 +5,12 @@ import type { Transaction } from "@/types";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 
 
-type MonthlyReportSectionProps = {
+type ReportSectionProps = {
   transactions: Transaction[];
 };
 
 
-export default function MonthlyReportSection({ transactions }: MonthlyReportSectionProps) {
+export default function ReportSection({ transactions }: ReportSectionProps) {
   const incomeData = {
     amount: transactions
     .filter(t => t.category === "income")
@@ -35,16 +35,19 @@ export default function MonthlyReportSection({ transactions }: MonthlyReportSect
   
 
   return (
-    <div className="flex flex-col gap-8">
-      <h2 className="text-5xl font-extrabold">
-        This Month's Report
-      </h2>
-      <div className={`flex flex-row border border-black/50 px-18 py-6 rounded-3xl gap-18`}>
-        <div className="flex flex-col w-[45%] my-12">
+    <div className="flex flex-col gap-10">
+      <div 
+        className="flex flex-row bg-white border border-black/50 px-18 py-6 rounded-3xl gap-18"
+      >
+        <div className="flex flex-col w-[40%] my-12">
           <h3 className="text-4xl font-bold">Your current budget is:</h3>
-          <span className="text-8xl font-extrabold my-6">{totalBalance.toLocaleString()}</span>
+          <div className="my-3 ml-10">
+            <span className={`text-8xl font-extrabold ${totalBalance < 0 ? "text-amber-500" : "text-green-500"}`}>
+              {totalBalance.toLocaleString()}
+            </span>
+          </div>
         </div>
-        <div className="w-[55%]">
+        <div className="w-[56%]">
           <ResponsiveContainer>
             <BarChart data={ incomeExpenseData } layout="vertical">
               <XAxis type="number" hide />
