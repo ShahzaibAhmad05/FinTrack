@@ -3,24 +3,31 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 
-import type { GoalMode } from "@/types";
+import type { GoalMode, UserGoal } from "@/types";
 
 
 type AddGoalModalProps = {
   onClose: () => void;
-  handleAddGoal: (title: string, mode: GoalMode, targetAmount: string) => void;
+  handleSubmitGoal: (title: string, mode: GoalMode, targetAmount: string) => void;
+  goal?: UserGoal | null;
+  mode?: "add" | "edit";
 };
 
 
-export default function AddGoalModal({ onClose, handleAddGoal }: AddGoalModalProps) {
-  const [title, setTitle] = useState("");
-  const [mode, setMode] = useState<GoalMode>("balanced");
-  const [targetAmount, setTargetAmount] = useState("");
+export default function AddGoalModal({
+  onClose,
+  handleSubmitGoal,
+  goal,
+  mode = "add"
+}: AddGoalModalProps) {
+  const [title, setTitle] = useState(goal?.title || "");
+  const [goalMode, setGoalMode] = useState<GoalMode>(goal?.mode || "balanced");
+  const [targetAmount, setTargetAmount] = useState(goal?.target_amount.toString() || "");
 
   const onSubmit = () => {
-    handleAddGoal(title, mode, targetAmount);
+    handleSubmitGoal(title, goalMode, targetAmount);
     setTitle("");
-    setMode("balanced");
+    setGoalMode("balanced");
     setTargetAmount("");
     onClose();
   };
@@ -58,8 +65,8 @@ export default function AddGoalModal({ onClose, handleAddGoal }: AddGoalModalPro
             </label>
             <select
               id="goal-mode"
-              value={mode}
-              onChange={(e) => setMode(e.target.value as GoalMode)}
+              value={goalMode}
+              onChange={(e) => setGoalMode(e.target.value as GoalMode)}
               className="border border-black p-2"
             >
               <option value="balanced">balanced</option>
@@ -94,7 +101,7 @@ export default function AddGoalModal({ onClose, handleAddGoal }: AddGoalModalPro
             onClick={onSubmit}
             className="border rounded-2xl border-black py-1.5 px-6 bg-blue-500 hover:bg-blue-200 transition-colors font-semibold"
           >
-            + Add Goal
+            {mode === "edit" ? "Save Goal" : "+ Add Goal"}
           </button>
         </div>
       </div>

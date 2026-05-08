@@ -1,7 +1,7 @@
 import type { Suggestion, Transaction, UserGoal } from "@/types";
 
-
-const isExpense = (category: string) => category !== "income";
+import { buildFinancialSummary } from "./financialComposite";
+import { getStateStrategy } from "./financialState";
 
 
 export function generateSuggestions(
@@ -9,6 +9,7 @@ export function generateSuggestions(
   goals: UserGoal[]
 ): Suggestion[] {
   const result: Suggestion[] = [];
+  const summary = buildFinancialSummary(transactions);
 
   if (transactions.length === 0) {
     return [{
@@ -18,25 +19,20 @@ export function generateSuggestions(
     }];
   }
 
-  const income = transactions
-    .filter((t) => t.category === "income")
+  const transactionSpend = transactions
+    .filter((t) => t.category === "transaction")
     .reduce((acc, t) => acc + t.amount, 0);
 
-  const expenses = transactions
-    .filter((t) => isExpense(t.category))
-    .reduce((acc, t) => acc + t.amount, 0);
+  const investing = summary.investment;
+  const saving = summary.saving;
+  const balance = summary.income - summary.expense - investing - saving;
 
-  const investing = transactions
-    .filter((t) => t.category === "investment")
-    .reduce((acc, t) => acc + t.amount, 0);
+  const stateSuggestion = getStateStrategy(summary).getSuggestion(summary);
+  if (stateSuggestion) {
+    result.push(stateSuggestion);
+  }
 
-  const saving = transactions
-    .filter((t) => t.category === "saving")
-    .reduce((acc, t) => acc + t.amount, 0);
-
-  const balance = income - expenses;
-
-  if (income === 0 && expenses > 0) {
+  if (summary.income === 0 && summary.expense > 0) {
     result.push({
       id: "no-income-high-expenses",
       title: "Income is zero but expenses are active",
@@ -44,7 +40,15 @@ export function generateSuggestions(
     });
   }
 
-  if (income > 0 && expenses > income * 0.8) {
+  if (summary.income === 0 && transactionSpend > 0) {
+    result.push({
+      id: "no-income-transaction-spend",
+      title: "Transactions are active without income",
+      detail: "You have transaction spending but no income. Add income or reduce general spending to avoid negative balance."
+    });
+  }
+
+  if (summary.income > 0 && summary.expense > summary.income * 0.8) {
     result.push({
       id: "high-expense-ratio",
       title: "Expenses are near income",
@@ -52,7 +56,7 @@ export function generateSuggestions(
     });
   }
 
-  if (income > 0 && expenses >= income) {
+  if (summary.income > 0 && summary.expense >= summary.income) {
     result.push({
       id: "expenses-exceed-income",
       title: "Expenses are exceeding income",
@@ -60,7 +64,15 @@ export function generateSuggestions(
     });
   }
 
-  if (income > 0 && investing + saving < income * 0.2) {
+  if (summary.income > 0 && transactionSpend > summary.income * 0.6) {
+    result.push({
+      id: "transaction-spend-high",
+      title: "General spending is high",
+      detail: "Your transaction category spending is taking a large share of income. Consider moving some purchases into expense planning."
+    });
+  }
+
+  if (summary.income > 0 && investing + saving < summary.income * 0.2) {
     result.push({
       id: "low-saving-investing",
       title: "Consider increasing saving/investing",

@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 // hooks
 import { useTransactions } from "@/hooks/transactions";
 
-import type { TimelineOption, Transaction, TransactionInput } from "@/types";
+import type { GoalMode, TimelineOption, Transaction, TransactionInput } from "@/types";
 
 import { filterTransactionsByTimeline, generateSuggestions } from "@/lib/algorithms";
 
@@ -26,7 +26,8 @@ export default function Home() {
     handleEditTransaction,
     handleRemoveTransaction,
     handleAddGoal,
-    goals,
+    handleEditGoal,
+    goal,
     transactions,
     isLoading 
   } = useTransactions();
@@ -34,7 +35,8 @@ export default function Home() {
   // control vars
   const [isAddingTransaction, setIsAddingTransaction] = useState<boolean>(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [isAddingGoal, setIsAddingGoal] = useState<boolean>(false);
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState<boolean>(false);
+  const [goalModalMode, setGoalModalMode] = useState<"add" | "edit">("add");
   const [isTimelineOpen, setIsTimelineOpen] = useState<boolean>(false);
   const [selectedTimeline, setSelectedTimeline] = useState<TimelineOption>("lifetime");
   const timelineOptions: TimelineOption[] = ["week", "month", "year", "lifetime"];
@@ -45,9 +47,21 @@ export default function Home() {
   );
 
   const suggestions = useMemo(
-    () => generateSuggestions(transactions, goals),
-    [transactions, goals]
+    () => generateSuggestions(transactions, goal ? [goal] : []),
+    [transactions, goal]
   );
+
+  const openGoalModal = () => {
+    if (goal) {
+      setGoalModalMode("edit");
+    }
+
+    else {
+      setGoalModalMode("add");
+    }
+
+    setIsGoalModalOpen(true);
+  };
 
 
   return (
@@ -62,11 +76,11 @@ export default function Home() {
           {/* Functional buttons */}
           <div className="flex flex-row gap-3 sm:gap-4 sm:ml-auto sm:mt-auto mr-1 sm:mr-5 relative">
             <button
-              onClick={() => setIsAddingGoal(true)}
+              onClick={openGoalModal}
               className="border-2 rounded-2xl border-black px-4 py-2 bg-white hover:bg-gray-200 font-semibold transition-transform hover:-translate-y-px hover:shadow-[0_1px_0_black]"
               aria-label="Open goals"
             >
-              Goals
+              Goal
             </button>
             <button
               onClick={() => setIsTimelineOpen((prev) => !prev)}
@@ -106,7 +120,7 @@ export default function Home() {
         {transactions.length > 0 && (
           <ReportSection
             transactions={timelineTransactions}
-            goals={goals}
+            goal={goal}
           />
         )}
 
@@ -120,7 +134,7 @@ export default function Home() {
               {suggestions.map((suggestion) => (
                 <div
                   key={suggestion.id}
-                  className="mr-auto text-left bg-white border border-black rounded-2xl px-4 py-3 mb-2 w-full"
+                  className="mr-auto text-left bg-white border-2 border-black/50 rounded-2xl px-4 py-3 mb-2 w-full"
                 >
                   <h3 className="text-lg font-bold">{suggestion.title}</h3>
                   <span className="text-gray-700">{suggestion.detail}</span>
@@ -161,10 +175,20 @@ export default function Home() {
         />
       )}
 
-      {isAddingGoal && (
+      {isGoalModalOpen && (
         <AddGoalModal
-          onClose={() => setIsAddingGoal(false)}
-          handleAddGoal={handleAddGoal}
+          key={`${goalModalMode}-${goal?.id || "new"}`}
+          onClose={() => setIsGoalModalOpen(false)}
+          goal={goalModalMode === "edit" ? goal || undefined : undefined}
+          mode={goalModalMode}
+          handleSubmitGoal={(title: string, mode: GoalMode, targetAmount: string) => {
+            if (goalModalMode === "edit" && goal) {
+              handleEditGoal(goal.id, title, mode, targetAmount);
+              return;
+            }
+
+            handleAddGoal(title, mode, targetAmount);
+          }}
         />
       )}
 

@@ -15,17 +15,17 @@ export default function TransactionsSection(
   const categoryBgColorMap: Record<string, string> = {
     income: "bg-green-500",
     transaction: "bg-cyan-500",
+    expense: "bg-amber-500",
     investment: "bg-pink-500",
     saving: "bg-indigo-500",
-    expense: "bg-amber-500"
   };
 
   const categoryTextColorMap: Record<string, string> = {
     income: "text-green-500",
     transaction: "text-cyan-500",
+    expense: "text-amber-500",
     investment: "text-pink-500",
     saving: "text-indigo-500",
-    expense: "text-amber-500"
   };
 
 

@@ -16,77 +16,72 @@ import {
   CartesianGrid
 } from "recharts";
 
-import { getGoalProgress, getModeTargetProgress } from "@/lib/algorithms";
+import { buildFinancialSummary } from "@/lib/algorithms/financialComposite";
+import { getGoalProgress } from "@/lib/algorithms";
 
 
 type ReportSectionProps = {
   transactions: Transaction[];
-  goals: UserGoal[];
+  goal: UserGoal | null;
 };
 
 
 export default function ReportSection({
   transactions,
-  goals
+  goal
 }: ReportSectionProps) {
+  const summary = buildFinancialSummary(transactions);
+
   const incomeData = {
-    amount: transactions
-      .filter((t) => t.category === "income")
-      .map((t) => t.amount)
-      .reduce((acc, curr) => acc + curr, 0),
+    amount: summary.income,
     type: "income",
     fill: "rgb(0, 201, 80)"
   };
 
   const expenseData = {
-    amount: transactions
-      .filter((t) => t.category !== "income")
-      .map((t) => t.amount)
-      .reduce((acc, curr) => acc + curr, 0),
+    amount: summary.expense,
     type: "expense",
     fill: "rgb(254, 154, 0)"
   };
 
   const incomeExpenseData = [incomeData, expenseData];
-  const totalBalance: number = incomeData.amount - expenseData.amount;
+  const totalBalance: number = summary.income - summary.expense - summary.investment - summary.saving;
 
   const investmentGrowthData = useMemo(() => {
-    const sorted = [...transactions].sort(
+    const sortedInvestments = transactions
+      .filter((t) => t.category === "investment")
+      .sort(
       (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
 
-    return sorted.reduce<{ timeline: string; total: number }[]>((acc, t) => {
-      const previousTotal = acc.length > 0 ? acc[acc.length - 1].total : 0;
-      const nextTotal = t.category === "investment"
-        ? previousTotal + t.amount
-        : previousTotal;
+    if (sortedInvestments.length === 0) {
+      return [];
+    }
 
-      acc.push({
+    let runningTotal = 0;
+    const points = sortedInvestments.map((t) => {
+      runningTotal += t.amount;
+
+      return {
         timeline: new Date(t.created_at).toLocaleDateString(),
-        total: nextTotal
-      });
+        total: runningTotal
+      };
+    });
 
-      return acc;
-    }, []);
+    return [{ timeline: "Start", total: 0 }, ...points];
   }, [transactions]);
 
   const goalProgressData = useMemo(
-    () => getGoalProgress(goals, transactions),
-    [goals, transactions]
+    () => getGoalProgress(goal ? [goal] : [], transactions),
+    [goal, transactions]
   );
-
-  const budgetTargetData = useMemo(
-    () => getModeTargetProgress(goals, transactions),
-    [goals, transactions]
-  );
-
 
   return (
     <div className="flex flex-col gap-10">
-      <div className="flex flex-col lg:flex-row bg-white border border-black/50 px-6 sm:px-10 lg:px-18 py-6 rounded-3xl gap-8 lg:gap-18">
+      <div className="flex flex-col lg:flex-row bg-white border-2 border-black px-6 sm:px-10 lg:px-18 py-6 rounded-3xl gap-8 lg:gap-18">
         <div className="flex flex-col lg:w-[40%] my-4 lg:my-12">
           <h3 className="text-4xl font-bold">Your current budget is:</h3>
-          <div className="my-3 ml-10">
+          <div className="my-3 mx-auto">
             <span className={`text-5xl sm:text-6xl lg:text-8xl font-extrabold ${totalBalance < 0 ? "text-amber-500" : "text-green-500"}`}>
               {totalBalance.toLocaleString()}
             </span>
@@ -130,45 +125,36 @@ export default function ReportSection({
               <XAxis dataKey="timeline" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="total" stroke="#ec4899" strokeWidth={3} dot={false} />
+              <Line type="linear" dataKey="total" stroke="#ec4899" strokeWidth={3} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       <div className="bg-white border border-black/50 px-6 sm:px-10 py-6 rounded-3xl">
-        <h3 className="text-2xl sm:text-3xl font-bold mb-4">Goal tracking</h3>
-        <div className="w-full h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={goalProgressData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="title" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="current" fill="#2563eb" />
-              <Bar dataKey="target" fill="#16a34a" />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="flex flex-col gap-4">
+          {goalProgressData.length > 0 ? (
+            goalProgressData.map((goal) => (
+              <div
+                key={goal.id}
+                className="flex items-center gap-4 text-left w-full rounded-2xl px-1 py-1"
+              >
+                <span className="mr-4 font-semibold text-lg truncate">{goal.title}</span>
+                <div className="h-4 flex-1 border border-black rounded-full overflow-hidden bg-white">
+                  <div
+                    className="h-full bg-black"
+                    style={{ width: `${goal.progressPct}%` }}
+                  />
+                </div>
+                <span className="w-14 shrink-0 text-right font-semibold">
+                  {goal.progressPct.toFixed(0)}%
+                </span>
+              </div>
+            ))
+          ) : (
+            <span className="text-gray-700">No goals yet.</span>
+          )}
         </div>
-      </div>
-
-      <div className="bg-white border border-black/50 px-6 sm:px-10 py-6 rounded-3xl">
-        <h3 className="text-2xl sm:text-3xl font-bold mb-4">Mode target progress</h3>
-        <div className="w-full h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={budgetTargetData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="mode" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="current" fill="#f59e0b" />
-              <Bar dataKey="target" fill="#0f766e" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <span className="text-sm text-gray-700 mt-3 block">
-          Progress is tracked by comparing your current amount per mode against the target you set.
-        </span>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 /**
- * category: income, transaction, investment, saving
+ * category: income, expense, transaction, investment, saving
  * id will be a uuid generated unique string
  */
 export type Transaction = {

@@ -17,8 +17,8 @@ export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>(
     () => getTransactionsLocalStorage()
   );
-  const [goals, setGoals] = useState<UserGoal[]>(
-    () => getGoalsLocalStorage()
+  const [goal, setGoal] = useState<UserGoal | null>(
+    () => getGoalsLocalStorage()[0] || null
   );
   const [isLoading] = useState<boolean>(false);
 
@@ -127,16 +127,47 @@ export function useTransactions() {
       created_at: new Date().toISOString()
     } as UserGoal;
 
-    const updatedGoals = [...goals, newGoal];
-    setGoals(updatedGoals);
-    setGoalsLocalStorage(updatedGoals);
+    setGoal(newGoal);
+    setGoalsLocalStorage([newGoal]);
   };
 
 
-  const handleRemoveGoal = (goal: UserGoal) => {
-    const filteredGoals = goals.filter((g) => g.id !== goal.id);
-    setGoals(filteredGoals);
-    setGoalsLocalStorage(filteredGoals);
+  const handleEditGoal = (
+    goalId: string,
+    title: string,
+    mode: GoalMode,
+    targetAmountInput: string
+  ) => {
+    const targetAmount = Number(targetAmountInput);
+
+    if (!title || !mode || Number.isNaN(targetAmount) || targetAmount <= 0) {
+      console.error("Cannot edit goal: invalid or missing goal attribute(s).");
+      return;
+    }
+
+    if (!goal || goal.id !== goalId) {
+      return;
+    }
+
+    const updatedGoal = {
+      ...goal,
+      title,
+      mode,
+      target_amount: targetAmount
+    };
+
+    setGoal(updatedGoal);
+    setGoalsLocalStorage([updatedGoal]);
+  };
+
+
+  const handleRemoveGoal = (goalToRemove: UserGoal) => {
+    if (!goal || goalToRemove.id !== goal.id) {
+      return;
+    }
+
+    setGoal(null);
+    setGoalsLocalStorage([]);
   };
 
 
@@ -145,9 +176,10 @@ export function useTransactions() {
     handleEditTransaction,
     handleRemoveTransaction,
     handleAddGoal,
+    handleEditGoal,
     handleRemoveGoal,
     transactions,
-    goals,
+    goal,
     isLoading
   };
 }

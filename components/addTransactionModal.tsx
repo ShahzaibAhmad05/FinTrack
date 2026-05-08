@@ -86,6 +86,7 @@ export default function AddTransactionModal(
             <option value="auto-select">auto-select</option>
             <option value="income">income</option>
             <option value="transaction">transaction</option>
+            <option value="expense">expense</option>
             <option value="investment">investment</option>
             <option value="saving">saving</option>
             </select>
